@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מנהיגי ישראל: ראשי ממשלה ונשיאים</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* <!-- Chosen Palette: Deep Cyan-Blue & Vibrant Muted Turquoise --> */
+        :root {
+            --bg-dark: #0A2B35;      /* Deep Cyan-Blue (Very Dark) */
+            --bg-card: #153F4A;      /* Dark Teal/Cyan for cards */
+            --accent-teal: #4AD7D1;  /* Vibrant Muted Turquoise */
+            --accent-dark: #1F8D88;  /* Darker accent for borders */
+            --text-light: #EAF8F8;   /* Light Cyan-White for text */
+            --text-dim: #739AA1;     /* Muted gray-cyan for secondary text */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* הסתרת פס גלילה אך שמירה על פונקציונליות */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* אנימציית כרטיסייה מתהפכת */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* Chart Container Styling - Mandatory per instructions */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Max width to prevent stretching */
+            height: 300px;    /* Base height */
+            max-height: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        
+        /* הוספה מיוחדת לטבלה כדי לשפר נראות בטלפון */
+        @media (max-width: 640px) {
+            .timeline-table td, .timeline-table th {
+                padding: 0.5rem 0.5rem; /* הקטנת ריווח בטבלה */
+                font-size: 0.875rem; /* Small text */
+            }
+            .timeline-table .align-top {
+                vertical-align: middle; /* מרכוז בטלפון עבור rowspan */
+            }
+        }
+
+        /* סגנון לקלט המבחן */
+        .quiz-input {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            border: 1px solid var(--accent-dark);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            width: 100%;
+        }
+        /* הדגשת תשובה נכונה */
+        .quiz-result-correct {
+            background-color: rgba(74, 215, 209, 0.2); /* Light Turquoise Overlay */
+        }
+        /* הדגשת תשובה שגויה */
+        .quiz-result-incorrect {
+            background-color: rgba(255, 99, 132, 0.2); /* Light Red Overlay */
+        }
+    </style>
+    <!-- Application Structure Plan: 
+         1. Timeline View (Table): Consolidated table with correct rowspan usage to reflect presidential overlaps, including the desired visual distinction for the Rivlin/Herzog transition under Netanyahu.
+         2. Flashcards View: An interactive study tool, updated with learning tips.
+         3. Quiz View (NEW): A test feature where users fill in the matching president for each PM.
+         4. Insights View: Visual analysis using Chart.js.
+         Designed for mobile-first experience with dark/teal aesthetics.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Header Section -->
+    <header class="bg-[#153F4A] border-b border-[#1F8D88] shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-[#4AD7D1]">מנהיגי ישראל</h1>
+                <p class="text-xs text-[#739AA1]">כרונולוגיה של ראשי ממשלה ונשיאים</p>
+            </div>
+            <!-- Mobile Menu / Tabs -->
+            <nav class="flex space-x-2 space-x-reverse bg-[#0A2B35] rounded-lg p-1">
+                <button onclick="switchTab('timeline')" id="btn-timeline" class="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-[#4AD7D1] text-[#0A2B35] shadow-md">רשימה</button>
+                <button onclick="switchTab('flashcards')" id="btn-flashcards" class="px-3 py-2 rounded-md text-sm font-medium transition-colors text-[#739AA1] hover:text-[#EAF8F8]">כרטיסיות</button>
+                <button onclick="switchTab('quiz')" id="btn-quiz" class="px-3 py-2 rounded-md text-sm font-medium transition-colors text-[#739AA1] hover:text-[#EAF8F8]">מבחן</button>
+                <button onclick="switchTab('insights')" id="btn-insights" class="px-3 py-2 rounded-md text-sm font-medium transition-colors text-[#739AA1] hover:text-[#EAF8F8]">ניתוח</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow container mx-auto px-4 py-6">
+
+        <!-- VIEW 1: TIMELINE (The Consolidated Table) -->
+        <section id="view-timeline" class="block animate-fade-in">
+            <div class="mb-6 bg-[#153F4A] p-4 rounded-xl border-r-4 border-[#4AD7D1]">
+                <h2 class="text-xl font-bold mb-2 text-[#EAF8F8]">רשימה כרונולוגית (ממוזגת)</h2>
+                <p class="text-[#739AA1] text-sm leading-relaxed">
+                    מקטע זה מציג את סדר כהונתם של ראשי ממשלת ישראל. הנשיאים מוצגים במבנה ממוזג (rowspan) כדי להדגיש את החפיפה בין התפקידים. שימו לב לחלוקה בין הנשיאים בתקופת כהונתו של בנימין נתניהו, כפי שמשתקף במספר השורות.
+                </p>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-[#2C5761] shadow-2xl">
+                <table class="w-full text-right bg-[#153F4A] min-w-[500px] timeline-table">
+                    <thead class="bg-[#0A2B35] text-[#4AD7D1]">
+                        <tr>
+                            <th class="py-4 px-4 font-bold border-b border-[#2C5761]">#</th>
+                            <th class="py-4 px-4 font-bold border-b border-[#2C5761]">ראש ממשלה</th>
+                            <th class="py-4 px-4 font-bold border-b border-[#2C5761] w-1/3">נשיא מכהן</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timeline-body" class="divide-y divide-[#2C5761] text-[#EAF8F8]">
+                        <!-- Data will be injected here via JS with Rowspan -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- הערה מיוחדת מהמקור -->
+            <div class="mt-6 p-4 bg-[#153F4A]/50 border border-[#4AD7D1]/30 rounded-lg">
+                <h3 class="text-[#4AD7D1] font-bold text-sm mb-1">הערה היסטורית על חפיפות (ריבלין/הרצוג):</h3>
+                <p class="text-[#739AA1] text-sm">
+                    החפיפה בין ראש ממשלה לנשיאים שונים מודגמת היטב בטבלה. לדוגמה, בתקופת כהונתו של בנימין נתניהו (הופעה #17), הנשיא <strong>ראובן ריבלין</strong> סיים את תפקידו. הנשיא הבא, <strong>יצחק הרצוג</strong>, ממשיך לכהן תחת ראשי הממשלה הבאים (הופעות #18, #19, #20). הטבלה מציגה את ריבלין עם rowspan קטן יותר (1 שורה) ואת הרצוג עם rowspan גדול יותר (3 שורות) כדי לשקף חלוקה זו באופן ויזואלי.
+                </p>
+            </div>
+        </section>
+
+        <!-- VIEW 2: FLASHCARDS (Study Tool) -->
+        <section id="view-flashcards" class="hidden">
+            <div class="mb-6 text-center">
+                <h2 class="text-xl font-bold text-[#EAF8F8]">כרטיסיות ושינון</h2>
+                <p class="text-[#739AA1] text-sm leading-relaxed">
+                    <strong>שיטות למידה:</strong> נסו לשייך מילה, אירוע היסטורי או רעיון משותף לכל צמד מנהיגים כדי לחזק את הזיכרון. 
+                    לחצו על הכרטיס כדי לחשוף את הנשיא שכיהן במקביל לראש הממשלה.
+                </p>
+            </div>
+
+            <!-- Flashcard Container -->
+            <div class="flex flex-col items-center justify-center min-h-[400px]">
+                
+                <!-- The Card -->
+                <div class="group w-full max-w-sm h-64 cursor-pointer perspective-1000" onclick="flipCard()">
+                    <div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d shadow-xl rounded-2xl">
+                        
+                        <!-- Front (Question) -->
+                        <div class="absolute w-full h-full bg-[#153F4A] border-2 border-[#4AD7D1] rounded-2xl p-6 flex flex-col items-center justify-center backface-hidden">
+                            <span class="text-[#4AD7D1] text-sm font-bold tracking-wider mb-4">ראש ממשלה</span>
+                            <h3 id="card-pm" class="text-3xl font-extrabold text-[#EAF8F8] text-center">--</h3>
+                            <div class="mt-6 text-[#739AA1] text-xs">לחץ לחשיפת הנשיא</div>
+                        </div>
+
+                        <!-- Back (Answer) -->
+                        <div class="absolute w-full h-full bg-[#4AD7D1] rounded-2xl p-6 flex flex-col items-center justify-center backface-hidden rotate-y-180">
+                            <span class="text-[#0A2B35] text-sm font-bold tracking-wider mb-4">נשיא מכהן</span>
+                            <h3 id="card-president" class="text-3xl font-extrabold text-[#0A2B35] text-center">--</h3>
+                            <div class="mt-6 text-[#0A2B35]/70 text-xs">לחץ לחזרה</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex items-center space-x-4 space-x-reverse mt-8">
+                    <button onclick="prevCard()" class="p-3 rounded-full bg-[#2C5761] hover:bg-[#396D78] text-white transition shadow-lg">
+                        &#8594; הקודם
+                    </button>
+                    <span id="card-counter" class="text-[#739AA1] font-mono">1 / 20</span>
+                    <button onclick="nextCard()" class="p-3 rounded-full bg-[#4AD7D1] hover:bg-[#1F8D88] text-white transition shadow-lg">
+                        הבא &#8592;
+                    </button>
+                </div>
+
+                <button onclick="shuffleCards()" class="mt-6 text-sm text-[#4AD7D1] hover:text-[#76F7F7] underline">ערבב כרטיסים</button>
+            </div>
+        </section>
+        
+        <!-- VIEW 3: QUIZ (Test Feature) -->
+        <section id="view-quiz" class="hidden">
+            <div class="mb-6 bg-[#153F4A] p-4 rounded-xl border-r-4 border-[#4AD7D1]">
+                <h2 class="text-xl font-bold mb-2 text-[#EAF8F8]">מבחן ידע: התאמת נשיאים</h2>
+                <p class="text-[#739AA1] text-sm leading-relaxed">
+                    בחרו את שמות הנשיאים המתאימים לכל ראש ממשלה. לאחר מכן לחצו על "בדיקת תשובות" כדי לקבל ציון ולראות את התוצאות.
+                </p>
+                <button onclick="checkQuiz()" class="mt-4 px-6 py-2 bg-[#4AD7D1] text-[#0A2B35] font-bold rounded-lg shadow-md hover:bg-[#1F8D88] hover:text-[#EAF8F8] transition-colors">
+                    בדיקת תשובות וקבלת ציון
+                </button>
+                <div id="quiz-results" class="mt-4 text-lg font-bold"></div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-[#2C5761] shadow-2xl">
+                <form id="quiz-form" onsubmit="event.preventDefault(); checkQuiz();">
+                    <table class="w-full text-right bg-[#153F4A] min-w-[500px] timeline-table">
+                        <thead class="bg-[#0A2B35] text-[#4AD7D1]">
+                            <tr>
+                                <th class="py-4 px-4 font-bold border-b border-[#2C5761]">#</th>
+                                <th class="py-4 px-4 font-bold border-b border-[#2C5761]">ראש ממשלה</th>
+                                <th class="py-4 px-4 font-bold border-b border-[#2C5761] w-1/3">הנשיא המכהן (מלאו כאן)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quiz-body" class="divide-y divide-[#2C5761] text-[#EAF8F8]">
+                            <!-- Quiz rows will be injected here -->
+                        </tbody>
+                    </table>
+                </form>
+            </div>
+        </section>
+
+        <!-- VIEW 4: INSIGHTS (Analytics) -->
+        <section id="view-insights" class="hidden">
+            <div class="mb-6 bg-[#153F4A] p-4 rounded-xl border-r-4 border-[#4AD7D1]">
+                <h2 class="text-xl font-bold mb-2 text-[#EAF8F8]">ניתוח נתונים</h2>
+                <p class="text-[#739AA1] text-sm leading-relaxed">
+                    מבט ויזואלי על התדירות בה מנהיגים הופיעו ברשימה הכרונולוגית. הגרפים מציגים כמה קדנציות (או תקופות חפיפה) נרשמו לכל ראש ממשלה ולכל נשיא על פי הנתונים שסופקו.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Chart 1: PM Occurrences -->
+                <div class="bg-[#153F4A] p-4 rounded-xl shadow-lg border border-[#2C5761]">
+                    <h3 class="text-center text-[#4AD7D1] font-bold mb-4">מספר הופעות ברשימה: ראשי ממשלה</h3>
+                    <div class="chart-container">
+                        <canvas id="pmChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: President Occurrences -->
+                <div class="bg-[#153F4A] p-4 rounded-xl shadow-lg border border-[#2C5761]">
+                    <h3 class="text-center text-[#4AD7D1] font-bold mb-4">מספר הופעות ברשימה: נשיאים</h3>
+                    <div class="chart-container">
+                        <canvas id="presidentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#0A2B35] border-t border-[#153F4A] py-6 text-center">
+        <p class="text-[#51767C] text-sm">נוצר על בסיס נתוני רשימת ראשי הממשלה והנשיאים</p>
+    </footer>
+
+    <script>
+        // --- Data Source ---
+        // Based on the provided list structure. Each entry is a PM-President pair.
+        const rawData = [
+            { pm: "דוד בן גוריון", pres: "חיים ויצמן" },
+            { pm: "משה שרת", pres: "יצחק בן צבי" },
+            { pm: "דוד בן גוריון", pres: "יצחק בן צבי" },
+            { pm: "לוי אשכול", pres: "זלמן שזר" },
+            { pm: "גולדה מאיר", pres: "אפרים קציר" },
+            { pm: "יצחק רבין", pres: "אפרים קציר" },
+            { pm: "מנחם בגין", pres: "יצחק נבון" },
+            { pm: "יצחק שמיר", pres: "חיים הרצוג" },
+            { pm: "שמעון פרס", pres: "חיים הרצוג" },
+            { pm: "יצחק שמיר", pres: "חיים הרצוג" },
+            { pm: "יצחק רבין", pres: "עזר ויצמן" },
+            { pm: "שמעון פרס", pres: "עזר ויצמן" },
+            { pm: "בנימין נתניהו", pres: "עזר ויצמן" },
+            { pm: "אהוד ברק", pres: "משה קצב" },
+            { pm: "אריאל שרון", pres: "משה קצב" },
+            { pm: "אהוד אולמרט", pres: "שמעון פרס" },
+            { pm: "בנימין נתניהו", pres: "ראובן ריבלין" }, // הופעה יחידה (rowspan=1)
+            { pm: "נפתלי בנט", pres: "יצחק הרצוג" },
+            { pm: "יאיר לפיד", pres: "יצחק הרצוג" },
+            { pm: "בנימין נתניהו", pres: "יצחק הרצוג" }  // שלוש הופעות (rowspan=3)
+        ];
+
+        // --- Data Grouping (Logic for Consolidated Table) ---
+        function groupData(data) {
+            const groups = [];
+            let currentPresident = null;
+            
+            data.forEach(item => {
+                // Start a new group if this is the first item or the president changes
+                if (!currentPresident || currentPresident.pres !== item.pres) {
+                    currentPresident = { pres: item.pres, pms: [] };
+                    groups.push(currentPresident);
+                }
+                // Add the PM to the current group
+                currentPresident.pms.push(item.pm);
+            });
+            return groups;
+        }
+
+        const groupedData = groupData(rawData);
+
+        // --- App State ---
+        let currentTab = 'timeline';
+        let currentCardIndex = 0;
+        let isFlipped = false;
+        let cardData = [...rawData]; // Copy for shuffling
+        const presidentNames = [...new Set(rawData.map(item => item.pres))]; // For the quiz dropdowns
+
+        // --- DOM Elements ---
+        const views = {
+            timeline: document.getElementById('view-timeline'),
+            flashcards: document.getElementById('view-flashcards'),
+            quiz: document.getElementById('view-quiz'), 
+            insights: document.getElementById('view-insights')
+        };
+        const buttons = {
+            timeline: document.getElementById('btn-timeline'),
+            flashcards: document.getElementById('btn-flashcards'),
+            quiz: document.getElementById('btn-quiz'), 
+            insights: document.getElementById('btn-insights')
+        };
+        const cardInner = document.getElementById('flashcard-inner');
+        const cardPM = document.getElementById('card-pm');
+        const cardPres = document.getElementById('card-president');
+        const cardCounter = document.getElementById('card-counter');
+        const quizBody = document.getElementById('quiz-body');
+        const quizResults = document.getElementById('quiz-results');
+
+
+        // --- Initialization ---
+        function init() {
+            renderTimeline();
+            renderQuizTable(); 
+            updateCard();
+            renderCharts();
+        }
+
+        // --- Tab Switching Logic (Updated) ---
+        window.switchTab = function(tabName) {
+            // Update View Visibility
+            Object.keys(views).forEach(key => {
+                if (key === tabName) {
+                    views[key].classList.remove('hidden');
+                    views[key].classList.add('block');
+                } else {
+                    views[key].classList.add('hidden');
+                    views[key].classList.remove('block');
+                }
+            });
+
+            // Update Button Styles
+            const activeColor = "bg-[#4AD7D1] text-[#0A2B35] shadow-md";
+            const inactiveColor = "text-[#739AA1] hover:text-[#EAF8F8]";
+
+            Object.keys(buttons).forEach(key => {
+                const btn = buttons[key];
+                btn.className = `px-3 py-2 rounded-md text-sm font-medium transition-colors ${key === tabName ? activeColor : inactiveColor}`;
+            });
+
+            currentTab = tabName;
+            
+            // Re-render quiz table every time quiz tab is opened to reset results
+            if (tabName === 'quiz') {
+                renderQuizTable();
+            }
+        };
+
+        // --- Timeline View Logic (Rowspan) ---
+        function renderTimeline() {
+            const tbody = document.getElementById('timeline-body');
+            tbody.innerHTML = '';
+            
+            let overallIndex = 0;
+            
+            groupedData.forEach((group) => {
+                const rowSpan = group.pms.length;
+
+                group.pms.forEach((pm, pmIndex) => {
+                    const row = document.createElement('tr');
+                    // Alternating background for PM rows within the group
+                    row.className = overallIndex % 2 === 0 ? 'bg-[#153F4A]' : 'bg-[#153F4A]/50'; 
+                    
+                    let rowContent = '';
+                    
+                    // Col 1: Index
+                    rowContent += `<td class="py-3 px-4 text-[#739AA1] text-xs border-b border-[#2C5761]">${overallIndex + 1}</td>`;
+                    
+                    // Col 2: PM
+                    rowContent += `<td class="py-3 px-4 font-medium border-b border-[#2C5761]">${pm}</td>`;
+                    
+                    // Col 3: President (Only for the first row of the group, using rowspan)
+                    if (pmIndex === 0) {
+                        rowContent += `
+                            <td rowspan="${rowSpan}" class="py-3 px-4 text-[#4AD7D1] border-b border-[#2C5761] align-top font-bold text-center bg-[#0A2B35] md:bg-transparent">
+                                ${group.pres}
+                            </td>
+                        `;
+                    }
+                    
+                    row.innerHTML = rowContent;
+                    tbody.appendChild(row);
+                    overallIndex++;
+                });
+            });
+        }
+
+
+        // --- Flashcard Logic ---
+        window.flipCard = function() {
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                cardInner.classList.add('rotate-y-180');
+            } else {
+                cardInner.classList.remove('rotate-y-180');
+            }
+        };
+
+        function updateCard() {
+            // Reset flip
+            isFlipped = false;
+            cardInner.classList.remove('rotate-y-180');
+
+            // Wait for flip back animation (short delay) if needed, but instant is snappier
+            setTimeout(() => {
+                const item = cardData[currentCardIndex];
+                cardPM.innerText = item.pm;
+                cardPres.innerText = item.pres;
+                cardCounter.innerText = `${currentCardIndex + 1} / ${cardData.length}`;
+            }, 150);
+        }
+
+        window.nextCard = function() {
+            if (currentCardIndex < cardData.length - 1) {
+                currentCardIndex++;
+                updateCard();
+            } else {
+                currentCardIndex = 0; // Loop back
+                updateCard();
+            }
+        };
+
+        window.prevCard = function() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                updateCard();
+            } else {
+                currentCardIndex = cardData.length - 1; // Loop to end
+                updateCard();
+            }
+        };
+
+        window.shuffleCards = function() {
+            for (let i = cardData.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cardData[i], cardData[j]] = [cardData[j], cardData[i]];
+            }
+            currentCardIndex = 0;
+            updateCard();
+        };
+
+        // --- Quiz Logic (NEW) ---
+        function renderQuizTable() {
+            // Reset quiz form and results
+            quizBody.innerHTML = '';
+            quizResults.innerHTML = '';
+            
+            // Shuffle data for quiz consistency
+            const shuffledQuizData = [...rawData];
+            for (let i = shuffledQuizData.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledQuizData[i], shuffledQuizData[j]] = [shuffledQuizData[j], shuffledQuizData[i]];
+            }
+
+            shuffledQuizData.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-[#153F4A]' : 'bg-[#153F4A]/50'; 
+                
+                let rowContent = '';
+                
+                // Col 1: Index
+                rowContent += `<td class="py-3 px-4 text-[#739AA1] text-xs border-b border-[#2C5761]">${index + 1}</td>`;
+                
+                // Col 2: PM
+                rowContent += `<td class="py-3 px-4 font-medium border-b border-[#2C5761]">${item.pm}</td>`;
+                
+                // Col 3: Input/Select for President
+                rowContent += `
+                    <td class="py-2 px-4 border-b border-[#2C5761]">
+                        <select id="quiz-input-${index}" name="president-${index}" class="quiz-input" data-answer="${item.pres}">
+                            <option value="">-- בחר נשיא --</option>
+                            ${presidentNames.sort().map(name => `<option value="${name}">${name}</option>`).join('')}
+                        </select>
+                    </td>
+                `;
+                
+                row.innerHTML = rowContent;
+                quizBody.appendChild(row);
+            });
+        }
+        
+        window.checkQuiz = function() {
+            let correctAnswers = 0;
+            const totalQuestions = rawData.length;
+            const quizRows = quizBody.querySelectorAll('tr');
+
+            quizRows.forEach((row, index) => {
+                const selectElement = document.getElementById(`quiz-input-${index}`);
+                const userAnswer = selectElement.value;
+                const correctAnswer = selectElement.getAttribute('data-answer');
+                
+                // Remove previous results classes
+                row.classList.remove('quiz-result-correct', 'quiz-result-incorrect');
+
+                if (userAnswer === correctAnswer) {
+                    correctAnswers++;
+                    row.classList.add('quiz-result-correct');
+                } else {
+                    row.classList.add('quiz-result-incorrect');
+                }
+            });
+
+            const score = (correctAnswers / totalQuestions) * 100;
+            
+            // Display Results
+            quizResults.className = 'mt-4 text-lg font-bold p-3 rounded-lg text-center';
+            if (score === 100) {
+                quizResults.classList.add('text-[#4AD7D1]', 'bg-[#1F8D88]/50');
+                quizResults.innerHTML = `<strong>כל הכבוד! ציון מושלם: ${correctAnswers} מתוך ${totalQuestions} (100%)</strong>`;
+            } else if (score >= 70) {
+                quizResults.classList.add('text-yellow-400', 'bg-[#1F8D88]/50');
+                quizResults.innerHTML = `<strong>ציון טוב: ${correctAnswers} מתוך ${totalQuestions} (${score.toFixed(0)}%)</strong>. ניתן לשפר!`;
+            } else {
+                quizResults.classList.add('text-red-400', 'bg-[#153F4A]/50');
+                quizResults.innerHTML = `<strong>ציון: ${correctAnswers} מתוך ${totalQuestions} (${score.toFixed(0)}%)</strong>. המשיכו להתאמן.`;
+            }
+        };
+
+
+        // --- Insights View Logic (Charts) ---
+        function renderCharts() {
+            // Count Frequencies
+            const pmCounts = {};
+            const presCounts = {};
+
+            rawData.forEach(item => {
+                pmCounts[item.pm] = (pmCounts[item.pm] || 0) + 1;
+                presCounts[item.pres] = (presCounts[item.pres] || 0) + 1;
+            });
+
+            // Prepare Chart Data
+            const chartConfig = (labels, data, label) => ({
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        backgroundColor: '#4AD7D1', // Turquoise
+                        borderColor: '#1F8D88',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', // Horizontal Bar for better name readability on mobile
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0A2B35',
+                            titleColor: '#4AD7D1',
+                            bodyColor: '#EAF8F8',
+                            borderColor: '#2C5761',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#739AA1', stepSize: 1 },
+                            grid: { color: '#2C5761' }
+                        },
+                        y: {
+                            ticks: { color: '#EAF8F8', font: { size: 11 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Render PM Chart
+            new Chart(
+                document.getElementById('pmChart'),
+                chartConfig(Object.keys(pmCounts), Object.values(pmCounts), 'מספר כהונות ברשימה')
+            );
+
+            // Render President Chart
+            new Chart(
+                document.getElementById('presidentChart'),
+                chartConfig(Object.keys(presCounts), Object.values(presCounts), 'מספר כהונות ברשימה')
+            );
+        }
+
+        // Run Init
+        window.onload = init;
+
+    </script>
+</body>
+</html>
